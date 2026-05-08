@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #5B4CF0;
+  --color-primary-soft: #EAF4FF;
+  
+  --color-acc-orange: #F4A622;
+  --color-acc-orange-soft: #FFF2DD;
+  --color-acc-blue: #3EA0FF;
+  --color-acc-blue-soft: #EAF4FF;
+  --color-acc-pink: #C56CE6;
+  --color-acc-pink-soft: #F5E8FA;
+
+  --color-bg-main: #F4F4F4;
+  --color-bg-card: #FFFFFF;
+  --color-bg-nav: #F8F8F8;
+  
+  --color-text-heading: #111111;
+  --color-text-subtitle: #555555;
+  --color-text-secondary: #8A8A8A;
+  
+  --color-divider: #D9D9D9;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+}
+
+@layer base {
+  body {
+    @apply bg-bg-main text-text-subtitle font-sans transition-colors duration-500 selection:bg-primary/30;
+  }
+}
+
+@layer components {
+  .glass {
+    background-color: #FFFFFF;
+    border: 1px solid #D9D9D9;
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.03);
+  }
+
+  .glass-card {
+    background-color: #FFFFFF;
+    border: 1px solid #D9D9D9;
+    box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.05);
+    @apply rounded-3xl p-6 transition-all duration-500;
+  }
+
+  .glass-card:hover {
+    @apply shadow-xl shadow-primary/5 -translate-y-1 border-primary/20;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-white px-8 py-3.5 rounded-2xl font-bold transition-all duration-300 hover:opacity-90 hover:shadow-xl hover:shadow-primary/20 active:scale-95 border-none cursor-pointer flex items-center justify-center gap-2;
+  }
+
+  .gradient-header {
+    @apply bg-linear-to-br from-primary to-acc-blue text-white shadow-xl shadow-primary/10;
+  }
+  
+  .input-field {
+    @apply w-full bg-white border border-divider rounded-2xl px-5 py-4 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all placeholder:text-text-secondary;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-primary/10 rounded-full hover:bg-primary/30;
+}
