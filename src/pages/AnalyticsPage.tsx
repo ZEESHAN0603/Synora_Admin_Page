@@ -10,21 +10,8 @@ import { GlassCard } from '../components/Common';
 import { TrendingUp, Users, Calendar, DollarSign, ArrowUpRight } from 'lucide-react';
 import { formatCurrency } from '../lib/utils';
 
-const growthData = [
-  { month: 'Jan', vendors: 10, organizers: 2, revenue: 5000 },
-  { month: 'Feb', vendors: 15, organizers: 4, revenue: 8000 },
-  { month: 'Mar', vendors: 22, organizers: 6, revenue: 15000 },
-  { month: 'Apr', vendors: 31, organizers: 8, revenue: 28000 },
-  { month: 'May', vendors: 42, organizers: 10, revenue: 42000 },
-  { month: 'Jun', vendors: 48, organizers: 12, revenue: 68500 },
-];
-
-const categoryStats = [
-  { name: 'Traditional Weddings', value: 45, color: '#5B4CF0' },
-  { name: 'Temple Festivals', value: 30, color: '#3EA0FF' },
-  { name: 'Corporate Meets', value: 15, color: '#F4A622' },
-  { name: 'Classical Events', value: 10, color: '#C56CE6' },
-];
+import { useState, useEffect } from 'react';
+import api from '../services/api';
 
 const MetricCard = ({ label, value, subtext, icon: Icon, colorClass }: any) => (
   <GlassCard className="flex items-center gap-6">
@@ -43,6 +30,26 @@ const MetricCard = ({ label, value, subtext, icon: Icon, colorClass }: any) => (
 );
 
 export const AnalyticsPage: React.FC = () => {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const res = await api.get('/admin/analytics');
+        setData(res.data);
+      } catch (err) {
+        console.error("Failed to fetch analytics", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnalytics();
+  }, []);
+
+  if (loading) return <div className="p-8 text-center text-text-secondary animate-pulse">Loading analytics...</div>;
+  if (!data) return <div className="p-8 text-center text-text-secondary">Failed to load analytics data.</div>;
+
   return (
     <div className="space-y-8 pb-10">
       <div>
@@ -51,10 +58,10 @@ export const AnalyticsPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard label="Monthly Growth" value="+12%" subtext="Recent Launch" icon={TrendingUp} colorClass="bg-primary" />
-        <MetricCard label="Active Users" value="86" subtext="Early Adopters" icon={Users} colorClass="bg-acc-blue" />
-        <MetricCard label="Event Volume" value="14" subtext="6 in planning" icon={Calendar} colorClass="bg-acc-orange" />
-        <MetricCard label="Net Revenue" value={formatCurrency(12500)} subtext="Initial Revenue" icon={DollarSign} colorClass="bg-black" />
+        <MetricCard label="Monthly Growth" value={`+${data.monthly_growth}%`} subtext="Recent Launch" icon={TrendingUp} colorClass="bg-primary" />
+        <MetricCard label="Active Users" value={data.active_users} subtext="Total Platform Base" icon={Users} colorClass="bg-acc-blue" />
+        <MetricCard label="Event Volume" value={data.event_volume} subtext="Total Events" icon={Calendar} colorClass="bg-acc-orange" />
+        <MetricCard label="Net Revenue" value={formatCurrency(data.net_revenue)} subtext="Confirmed Bookings" icon={DollarSign} colorClass="bg-black" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -63,9 +70,9 @@ export const AnalyticsPage: React.FC = () => {
             <h2 className="text-xl font-bold text-text-heading">User & Vendor Growth</h2>
             <p className="text-sm text-text-secondary">Comparing registration trends over the last 6 months</p>
           </div>
-          <div className="h-[350px]">
+          <div style={{ width: "100%", height: 350 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={growthData}>
+              <AreaChart data={data.growth_data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#D9D9D9" opacity={0.5} />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: '#8A8A8A' }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: '#8A8A8A' }} />
@@ -90,9 +97,9 @@ export const AnalyticsPage: React.FC = () => {
             <h2 className="text-xl font-bold text-text-heading">Revenue streams</h2>
             <p className="text-sm text-text-secondary">Financial performance distribution across platform</p>
           </div>
-          <div className="h-[350px]">
+          <div style={{ width: "100%", height: 350 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={growthData}>
+              <LineChart data={data.growth_data}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#D9D9D9" opacity={0.5} />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#8A8A8A' }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#8A8A8A' }} />
@@ -113,11 +120,11 @@ export const AnalyticsPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <GlassCard className="lg:col-span-1">
           <h2 className="text-xl font-bold mb-8 text-text-heading">Event Categories</h2>
-          <div className="h-[300px]">
+          <div style={{ width: "100%", height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={categoryStats}
+                  data={data.category_stats}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -125,7 +132,7 @@ export const AnalyticsPage: React.FC = () => {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {categoryStats.map((entry, index) => (
+                  {data.category_stats.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -134,7 +141,7 @@ export const AnalyticsPage: React.FC = () => {
             </ResponsiveContainer>
           </div>
           <div className="mt-4 space-y-4">
-            {categoryStats.map((item, i) => (
+            {data.category_stats.map((item: any, i: number) => (
               <div key={i} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />

@@ -32,7 +32,7 @@ export const Topbar: React.FC<TopbarProps> = ({ onToggleSidebar, isMobile }) => 
               <span className="font-black text-lg">S</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-base md:text-lg font-black tracking-tighter leading-none text-text-heading">Synora</span>
+              <span className="text-base md:text-lg font-black tracking-tighter leading-none text-text-heading">EventLink</span>
               <span className="text-[10px] font-black uppercase tracking-widest text-primary mt-0.5">Admin</span>
             </div>
           </div>

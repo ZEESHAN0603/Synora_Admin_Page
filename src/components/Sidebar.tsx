@@ -30,10 +30,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, isMobile })
   const navItems = [
     { icon: LayoutDashboard, label: 'Overview', path: '/' },
     { icon: Users, label: 'Vendors', path: '/vendors' },
-    { icon: UserSquare2, label: 'Organizers', path: '/organizers' },
+    { icon: UserSquare2, label: 'Users', path: '/users' },
     { icon: Calendar, label: 'Events', path: '/events' },
+    { icon: FileText, label: 'Bookings', path: '/bookings' },
     { icon: BarChart3, label: 'Analytics', path: '/analytics' },
-    { icon: FileText, label: 'Reports', path: '/reports' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
@@ -73,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, isMobile })
                   <span className="font-black text-lg">S</span>
                 </div>
                 <div className="flex flex-col overflow-hidden">
-                  <span className="text-xl font-black tracking-tighter leading-none group-hover:text-primary transition-colors text-text-heading">Synora Tamil Nadu</span>
+                  <span className="text-xl font-black tracking-tighter leading-none group-hover:text-primary transition-colors text-text-heading">EventLink Tamil Nadu</span>
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 mt-1">Console • TN</span>
                 </div>
               </div>

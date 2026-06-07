@@ -7,8 +7,8 @@ import { DashboardHome } from './pages/DashboardHome';
 import { VendorManagement } from './pages/VendorManagement';
 import { OrganizerManagement } from './pages/OrganizerManagement';
 import { EventManagement } from './pages/EventManagement';
+import { BookingManagement } from './pages/BookingManagement';
 import { AnalyticsPage } from './pages/AnalyticsPage';
-import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 
 export default function App() {
@@ -22,10 +22,10 @@ export default function App() {
             <Route path="/" element={<DashboardLayout />}>
               <Route index element={<DashboardHome />} />
               <Route path="vendors" element={<VendorManagement />} />
-              <Route path="organizers" element={<OrganizerManagement />} />
+              <Route path="users" element={<OrganizerManagement />} />
               <Route path="events" element={<EventManagement />} />
+              <Route path="bookings" element={<BookingManagement />} />
               <Route path="analytics" element={<AnalyticsPage />} />
-              <Route path="reports" element={<ReportsPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
 

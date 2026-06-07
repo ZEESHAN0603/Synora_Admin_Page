@@ -1,23 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GlassCard } from '../components/Common';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { User, Bell, Shield, Palette, Database, Save, LogOut } from 'lucide-react';
+import api from '../services/api';
 
 export const SettingsPage: React.FC = () => {
   const { user, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, setTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
   const [displayName, setDisplayName] = useState('TN Admin');
   const [timezone, setTimezone] = useState('IST (Chennai/Kolkata)');
+  const [loading, setLoading] = useState(true);
 
-  const handleSaveProfile = () => {
-    alert(`Success: Profile updated to ${displayName} (${timezone})`);
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/admin/profile');
+        if (res.data) {
+          setDisplayName(res.data.display_name);
+          setTimezone(res.data.timezone);
+          setNotifications(res.data.notifications_enabled);
+          if (res.data.theme === 'light' || res.data.theme === 'dark') {
+             setTheme(res.data.theme);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, [setTheme]);
+
+  const handleSaveProfile = async () => {
+    try {
+      await api.put('/admin/profile', {
+        display_name: displayName,
+        timezone: timezone,
+        theme: theme,
+        notifications_enabled: notifications
+      });
+      alert(`Success: Profile updated to ${displayName} (${timezone})`);
+    } catch (err) {
+      alert("Failed to update profile");
+    }
   };
 
   const handleSecurityUpdate = () => {
     alert('Security: Credentials update initiated. Please check your admin email for instructions.');
   };
+
+  if (loading) return <div className="p-8 text-center text-text-secondary animate-pulse">Loading settings...</div>;
 
   return (
     <div className="space-y-8 max-w-4xl pb-20">

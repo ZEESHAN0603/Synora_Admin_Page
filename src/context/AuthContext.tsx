@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
+import { User } from '../types';
 
 interface AuthContextType {
-  user: any | null;
+  user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -10,34 +12,64 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check local storage for mock session
-    const savedUser = localStorage.getItem('synora_mock_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
+    const checkAuth = async () => {
+      const token = localStorage.getItem('eventlink_token');
+      if (token) {
+        try {
+          const res = await api.get('/auth/me');
+          setUser(res.data);
+          localStorage.setItem('eventlink_user', JSON.stringify(res.data));
+        } catch (error) {
+          console.error("Failed to fetch user data", error);
+          localStorage.removeItem('eventlink_token');
+          localStorage.removeItem('eventlink_user');
+          setUser(null);
+        }
+      } else {
+        const savedUser = localStorage.getItem('eventlink_user');
+        if (savedUser) {
+          setUser(JSON.parse(savedUser));
+        }
+      }
+      setLoading(false);
+    };
+    checkAuth();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // Simplified delay for realism
-    await new Promise(resolve => setTimeout(resolve, 800));
+    const formData = new URLSearchParams();
+    formData.append('username', email);
+    formData.append('password', password);
 
-    if (email === 'admin@gmail.com' && password === 'admin123') {
-      const mockUser = { id: 'admin-id', email: 'admin@gmail.com' };
-      setUser(mockUser);
-      localStorage.setItem('synora_mock_user', JSON.stringify(mockUser));
-    } else {
-      throw new Error('Invalid credentials. Hint: use admin@gmail.com / admin123');
+    try {
+      const response = await api.post('/auth/login', formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
+      
+      const token = response.data.access_token;
+      localStorage.setItem('eventlink_token', token);
+
+      const meResponse = await api.get('/auth/me');
+      setUser(meResponse.data);
+      localStorage.setItem('eventlink_user', JSON.stringify(meResponse.data));
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      throw new Error('Invalid credentials or network error.');
     }
   };
 
   const signOut = async () => {
     setUser(null);
-    localStorage.removeItem('synora_mock_user');
+    localStorage.removeItem('eventlink_token');
+    localStorage.removeItem('eventlink_user');
   };
 
   return (

@@ -1,53 +1,76 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, MoreVertical, CheckCircle2, XCircle, Ban, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { GlassCard, Badge } from '../components/Common';
 import { cn } from '../lib/utils';
-
-const VENDORS_MOCK = [
-  { id: '1', name: 'Saravana Mandapam', category: 'Venue', city: 'Chennai', rating: 4.8, status: 'approved', active: true },
-  { id: '2', name: 'Madurai Marry Decor', category: 'Decor', city: 'Madurai', rating: 4.5, status: 'pending', active: true },
-  { id: '3', name: 'Annapoorna Catering', category: 'Catering', city: 'Coimbatore', rating: 4.9, status: 'approved', active: true },
-  { id: '4', name: 'Trichy Lights & Sound', category: 'Sound', city: 'Trichy', rating: 4.2, status: 'blocked', active: false },
-  { id: '5', name: 'Salem Security Guard', category: 'Services', city: 'Salem', rating: 4.7, status: 'approved', active: true },
-];
+import api from '../services/api';
+import { Vendor } from '../types';
 
 export const VendorManagement: React.FC = () => {
-  const [vendors, setVendors] = useState(VENDORS_MOCK);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Record<string, string>>({});
 
-  const filteredVendors = vendors.filter(v => 
-    v.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
-    (statusFilter === 'all' || v.status === statusFilter)
-  );
-
-  const handleUpdateStatus = (id: string, newStatus: string) => {
-    setVendors(prev => prev.map(v => v.id === id ? { ...v, status: newStatus } : v));
-  };
-
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this vendor?')) {
-      setVendors(prev => prev.filter(v => v.id !== id));
+  const fetchVendors = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [res, catRes] = await Promise.all([
+        api.get('/admin/vendors'),
+        api.get('/categories')
+      ]);
+      const vendorsData = res.data;
+      setVendors(
+        Array.isArray(vendorsData)
+          ? vendorsData
+          : vendorsData.vendors || vendorsData.data || []
+      );
+      
+      const catMap: Record<string, string> = {};
+      if (Array.isArray(catRes.data)) {
+        catRes.data.forEach((c: any) => {
+          catMap[c.id] = c.name;
+        });
+      }
+      setCategories(catMap);
+    } catch (err: any) {
+      setError('Failed to fetch vendors');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAddVendor = () => {
-    const name = window.prompt('Vendor Name:');
-    if (!name) return;
-    const city = window.prompt('City:', 'Chennai');
-    if (!city) return;
-    
-    const newVendor = {
-      id: Math.random().toString(36).substr(2, 9),
-      name,
-      category: 'General',
-      city,
-      rating: 5.0,
-      status: 'pending',
-      active: true
-    };
-    
-    setVendors([newVendor, ...vendors]);
+  useEffect(() => {
+    fetchVendors();
+  }, []);
+
+  const filteredVendors = Array.isArray(vendors)
+    ? vendors.filter(v => 
+        (v.business_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) && 
+        (statusFilter === 'all' || v.approval_status === statusFilter)
+      )
+    : [];
+
+  const handleApprove = async (id: string) => {
+    try {
+      await api.patch(`/admin/vendors/${id}/approve`);
+      fetchVendors(); // Refresh UI immediately
+    } catch (err: any) {
+      alert('Failed to approve vendor');
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    const reason = window.prompt('Reason for rejection:');
+    if (reason === null) return;
+    try {
+      await api.patch(`/admin/vendors/${id}/reject`, { reason: reason || 'Not suitable' });
+      fetchVendors(); // Refresh UI immediately
+    } catch (err: any) {
+      alert('Failed to reject vendor');
+    }
   };
 
   return (
@@ -57,10 +80,13 @@ export const VendorManagement: React.FC = () => {
           <h1 className="text-3xl font-bold tracking-tight">Vendor Management</h1>
           <p className="text-text-subtitle font-medium">Verify, approve, and monitor your platform's service providers.</p>
         </div>
-        <button className="btn-primary py-2 px-6" onClick={handleAddVendor}>
-          Add New Vendor
-        </button>
       </div>
+
+      {error && (
+        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-lg font-bold">
+          Failed to load vendors.<br/>Please login again.
+        </div>
+      )}
 
       <GlassCard className="!p-0 overflow-hidden">
         {/* Table Toolbar */}
@@ -86,7 +112,7 @@ export const VendorManagement: React.FC = () => {
                 <option value="all">All Status</option>
                 <option value="approved">Approved</option>
                 <option value="pending">Pending</option>
-                <option value="blocked">Blocked</option>
+                <option value="rejected">Rejected</option>
               </select>
             </div>
           </div>
@@ -94,6 +120,9 @@ export const VendorManagement: React.FC = () => {
 
         {/* Desktop Table */}
         <div className="hidden md:block overflow-x-auto">
+          {loading ? (
+            <div className="p-8 text-center text-text-secondary animate-pulse">Loading vendors...</div>
+          ) : (
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-bg-main border-b border-divider">
@@ -102,7 +131,6 @@ export const VendorManagement: React.FC = () => {
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary">Location</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary">Rating</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary">Status</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary">Activity</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-text-secondary text-right">Actions</th>
               </tr>
             </thead>
@@ -112,122 +140,105 @@ export const VendorManagement: React.FC = () => {
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center font-bold text-primary uppercase">
-                        {v.name.charAt(0)}
+                        {v.business_name.charAt(0)}
                       </div>
-                      <span className="font-bold text-text-heading">{v.name}</span>
+                      <span className="font-bold text-text-heading">{v.business_name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="text-sm font-medium opacity-70">{v.category}</span>
+                    <span className="text-sm font-medium opacity-70">{categories[v.category_id] || v.category_id}</span>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="text-sm font-medium opacity-70">{v.city}</span>
+                    <span className="text-sm font-medium opacity-70">{v.location}</span>
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-bold">{v.rating}</span>
+                      <span className="text-sm font-bold">{v.rating ?? 0}</span>
                       <div className="flex text-amber-500">
-                        {Array.from({ length: 1 }).map((_, i) => <CheckCircle2 key={i} size={14} fill="currentColor" />)}
+                        <CheckCircle2 size={14} fill="currentColor" />
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <Badge variant={v.status === 'approved' ? 'success' : v.status === 'blocked' ? 'error' : 'warning'}>
-                      {v.status}
+                    <Badge variant={v.approval_status === 'approved' ? 'success' : v.approval_status === 'rejected' ? 'error' : 'warning'}>
+                      {v.approval_status}
                     </Badge>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-2">
-                      <div className={cn("w-2 h-2 rounded-full", v.active ? "bg-emerald-500" : "bg-rose-500")} />
-                      <span className="text-xs font-bold uppercase">{v.active ? 'Active' : 'Offline'}</span>
-                    </div>
-                  </td>
                   <td className="px-6 py-5 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {v.status === 'pending' && (
-                        <button 
-                          className="p-2 text-emerald-500 hover:bg-emerald-500/10 rounded-lg" 
-                          title="Approve"
-                          onClick={() => handleUpdateStatus(v.id, 'approved')}
-                        >
-                          <CheckCircle2 size={18} />
-                        </button>
+                    <div className="flex items-center justify-end gap-2">
+                      {v.approval_status === 'pending' && (
+                        <>
+                          <button 
+                            className="p-2 text-emerald-500 hover:bg-emerald-500/10 rounded-lg" 
+                            title="Approve"
+                            onClick={() => handleApprove(v.id)}
+                          >
+                            <CheckCircle2 size={18} />
+                          </button>
+                          <button 
+                            className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg" 
+                            title="Reject"
+                            onClick={() => handleReject(v.id)}
+                          >
+                            <XCircle size={18} />
+                          </button>
+                        </>
                       )}
-                      {v.status !== 'blocked' && (
-                        <button 
-                          className="p-2 text-amber-500 hover:bg-amber-500/10 rounded-lg" 
-                          title="Block"
-                          onClick={() => handleUpdateStatus(v.id, 'blocked')}
-                        >
-                          <Ban size={18} />
-                        </button>
-                      )}
-                      <button 
-                        className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg" 
-                        title="Delete"
-                        onClick={() => handleDelete(v.id)}
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                      <button className="p-2 hover:bg-black/5 rounded-lg">
-                        <MoreVertical size={18} />
-                      </button>
                     </div>
                   </td>
                 </tr>
               ))}
+              {filteredVendors.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-text-secondary">No vendors found.</td>
+                </tr>
+              )}
             </tbody>
           </table>
+          )}
         </div>
 
         {/* Mobile Grid */}
         <div className="md:hidden p-4 space-y-4">
-          {filteredVendors.map((v) => (
+          {loading ? (
+             <div className="text-center animate-pulse text-text-secondary py-8">Loading vendors...</div>
+          ) : (
+            filteredVendors.map((v) => (
             <div key={v.id} className="p-4 bg-bg-main rounded-2xl border border-divider">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center font-bold text-primary uppercase text-sm">
-                    {v.name.charAt(0)}
+                    {v.business_name.charAt(0)}
                   </div>
                   <div>
-                    <h4 className="font-bold text-text-heading">{v.name}</h4>
-                    <p className="text-xs text-text-secondary font-bold uppercase">{v.category} • {v.city}</p>
+                    <h4 className="font-bold text-text-heading">{v.business_name}</h4>
+                    <p className="text-xs text-text-secondary font-bold uppercase">{categories[v.category_id] || v.category_id} • {v.location}</p>
                   </div>
                 </div>
-                <Badge variant={v.status === 'approved' ? 'success' : v.status === 'blocked' ? 'error' : 'warning'}>
-                  {v.status}
+                <Badge variant={v.approval_status === 'approved' ? 'success' : v.approval_status === 'rejected' ? 'error' : 'warning'}>
+                  {v.approval_status}
                 </Badge>
               </div>
               <div className="flex items-center justify-between pt-4 border-t border-divider">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-text-subtitle">Rating: {v.rating}</span>
+                  <span className="text-xs font-bold text-text-subtitle">Rating: {v.rating ?? 0}</span>
                 </div>
                 <div className="flex gap-2">
-                  <button className="p-2 bg-primary/10 text-primary rounded-lg" onClick={() => handleUpdateStatus(v.id, v.status === 'approved' ? 'blocked' : 'approved')}>
-                    <MoreVertical size={16} />
-                  </button>
-                  <button className="p-2 bg-rose-500/10 text-rose-500 rounded-lg" onClick={() => handleDelete(v.id)}>
-                    <Trash2 size={16} />
-                  </button>
+                  {v.approval_status === 'pending' && (
+                    <>
+                      <button className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg" onClick={() => handleApprove(v.id)}>
+                        <CheckCircle2 size={16} />
+                      </button>
+                      <button className="p-2 bg-rose-500/10 text-rose-500 rounded-lg" onClick={() => handleReject(v.id)}>
+                        <XCircle size={16} />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Pagination */}<div className="p-4 md:p-6 border-t border-divider flex items-center justify-between">
-          <p className="text-sm text-text-secondary font-medium">Showing 1 to 7 of 48 entries</p>
-          <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-black/5 rounded-lg disabled:opacity-30" disabled>
-              <ChevronLeft size={20} />
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center bg-primary text-white rounded-lg text-sm font-bold">1</button>
-            <button className="w-8 h-8 flex items-center justify-center hover:bg-black/5 rounded-lg text-sm font-bold">2</button>
-            <button className="w-8 h-8 flex items-center justify-center hover:bg-black/5 rounded-lg text-sm font-bold">3</button>
-            <button className="p-2 hover:bg-black/5 rounded-lg">
-              <ChevronRight size={20} />
-            </button>
-          </div>
+          ))
+          )}
         </div>
       </GlassCard>
     </div>

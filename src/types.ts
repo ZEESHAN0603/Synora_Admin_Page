@@ -1,39 +1,66 @@
-export interface Vendor {
-  id: string;
-  name: string;
-  category: string;
-  city: string;
-  rating: number;
-  status: 'pending' | 'approved' | 'blocked';
-  active: boolean;
-  createdAt: string;
-}
-
-export interface Organizer {
+export interface User {
   id: string;
   name: string;
   email: string;
-  eventsCreated: number;
-  totalSpending: number;
-  active: boolean;
-  createdAt: string;
+  role: string;
+  phone?: string;
+  city?: string;
+  created_at: string;
+}
+
+export interface Vendor {
+  id: string;
+  user_id: string;
+  category_id: string;
+  business_name: string;
+  description: string;
+  location: string;
+  base_price_min: number;
+  base_price_max: number;
+  gst_number: string;
+  portfolio_url?: string;
+  rating: number;
+  total_reviews: number;
+  approved: boolean;
+  approval_status: string;
+  approved_by?: number;
+  approved_at?: string;
+  rejection_reason?: string;
+  created_at: string;
 }
 
 export interface Event {
   id: string;
-  title: string;
-  organizerName: string;
-  eventType: string;
+  organizer_id: string;
+  event_name: string;
+  event_type: string;
+  event_date: string;
+  location: string;
   budget: number;
-  status: 'pending' | 'active' | 'cancelled' | 'completed';
-  date: string;
-  vendorCount: number;
+  guest_count: number;
+  description?: string;
+  created_at: string;
+}
+
+export interface Booking {
+  id: string;
+  event_id: string;
+  vendor_id: string;
+  organizer_id: string;
+  booking_status: string;
+  total_amount: number;
+  notes?: string;
+  rejection_reason?: string;
+  created_at: string;
+  event_name?: string;
+  vendor_name?: string;
+  vendor_category?: string;
 }
 
 export interface DashboardStats {
-  totalVendors: number;
-  totalOrganizers: number;
-  activeEvents: number;
-  revenue: number;
-  pendingApprovals: number;
+  total_users: number;
+  total_vendors: number;
+  total_events: number;
+  total_bookings: number;
+  pending_vendors: number;
 }

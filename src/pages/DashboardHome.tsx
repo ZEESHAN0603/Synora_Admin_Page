@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
@@ -10,7 +10,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Settings,
-  BarChart3
+  BarChart3,
+  AlertCircle
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { 
@@ -27,6 +28,8 @@ import {
 } from 'recharts';
 import { GlassCard, Badge } from '../components/Common';
 import { formatCurrency, cn } from '../lib/utils';
+import api from '../services/api';
+import { DashboardStats } from '../types';
 
 const data = [
   { name: 'Jan', value: 80 },
@@ -38,14 +41,7 @@ const data = [
   { name: 'Jul', value: 410 },
 ];
 
-const categoryData = [
-  { name: 'Mandapams', value: 12, color: '#5B4CF0' },
-  { name: 'Natures Decor', value: 15, color: '#F4A622' },
-  { name: 'South Catering', value: 8, color: '#3EA0FF' },
-  { name: 'Traditionals', value: 5, color: '#C56CE6' },
-];
-
-const StatCard = ({ icon: Icon, label, value, trend, trendValue, iconColor, iconBg, delay = 0 }: any) => (
+const StatCard = ({ icon: Icon, label, value, trend, trendValue, iconColor, iconBg, delay = 0, isLoading = false }: any) => (
   <GlassCard delay={delay} className="flex flex-row items-center gap-5 p-5 min-w-[260px]">
     <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shrink-0", iconBg)}>
       <Icon size={24} className={iconColor} />
@@ -55,13 +51,18 @@ const StatCard = ({ icon: Icon, label, value, trend, trendValue, iconColor, icon
         <p className="text-text-secondary text-[10px] font-black uppercase tracking-widest truncate">{label}</p>
         <div className={cn(
           "flex items-center gap-0.5 text-[10px] font-black",
-          trend === 'up' ? "text-emerald-500" : "text-rose-500"
+          trend === 'up' ? "text-emerald-500" : trend === 'down' ? "text-rose-500" : "text-text-secondary"
         )}>
-          {trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+          {trend === 'up' && <ArrowUpRight size={14} />}
+          {trend === 'down' && <ArrowDownRight size={14} />}
           {trendValue}
         </div>
       </div>
-      <h3 className="text-2xl font-black tracking-tight text-text-heading truncate">{value}</h3>
+      {isLoading ? (
+        <div className="h-8 bg-black/5 dark:bg-white/5 rounded-md animate-pulse w-1/2 mt-1"></div>
+      ) : (
+        <h3 className="text-2xl font-black tracking-tight text-text-heading truncate">{value}</h3>
+      )}
     </div>
   </GlassCard>
 );
@@ -92,28 +93,55 @@ const QuickAction = ({ icon: Icon, label, path, color, iconColor = "text-white",
 };
 
 export const DashboardHome: React.FC = () => {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/admin/dashboard');
+        setStats(response.data);
+      } catch (err: any) {
+        setError('Failed to load dashboard statistics. Backend might be offline.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
   return (
     <div className="space-y-10 pb-20">
       {/* Premium Header */}
       <div className="relative">
         <div className="absolute -top-10 -left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
-        <div className="relative">
-          <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-text-heading leading-none">
-            Synora <span className="text-primary">Tamil Nadu</span>
-          </h1>
-          <p className="mt-3 text-text-subtitle font-bold uppercase tracking-[0.3em] text-xs">
-            TN Ecosystem Intelligence • 2026
-          </p>
+        <div className="relative flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-text-heading leading-none">
+              EventLink <span className="text-primary">Tamil Nadu</span>
+            </h1>
+            <p className="mt-3 text-text-subtitle font-bold uppercase tracking-[0.3em] text-xs">
+              TN Ecosystem Intelligence • 2026
+            </p>
+          </div>
         </div>
       </div>
 
+      {error && (
+        <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 p-4 rounded-xl flex items-center gap-3">
+          <AlertCircle size={20} />
+          <span className="font-bold text-sm">{error}</span>
+        </div>
+      )}
+
       {/* Responsive Horizontal Stats */}
       <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 snap-x">
-        <div className="snap-center"><StatCard icon={Users} label="Total Vendors" value="48" trend="up" trendValue="+5" iconColor="text-acc-blue" iconBg="bg-acc-blue-soft" delay={0.1} /></div>
-        <div className="snap-center"><StatCard icon={UserSquare2} label="TN Organizers" value="12" trend="up" trendValue="+2" iconColor="text-acc-pink" iconBg="bg-acc-pink-soft" delay={0.2} /></div>
-        <div className="snap-center"><StatCard icon={Calendar} label="Active Events" value="8" trend="up" trendValue="+3" iconColor="text-acc-orange" iconBg="bg-acc-orange-soft" delay={0.3} /></div>
-        <div className="snap-center"><StatCard icon={DollarSign} label="State Volume" value={formatCurrency(48500)} trend="up" trendValue="+12%" iconColor="text-primary" iconBg="bg-primary-soft" delay={0.4} /></div>
-        <div className="snap-center"><StatCard icon={Clock} label="Pending Approvals" value="4" trend="down" trendValue="-2" iconColor="text-acc-orange" iconBg="bg-acc-orange-soft" delay={0.5} /></div>
+        <div className="snap-center"><StatCard isLoading={loading} icon={Users} label="Total Vendors" value={stats?.total_vendors ?? 0} trend="up" trendValue="+12%" iconColor="text-acc-blue" iconBg="bg-acc-blue-soft" delay={0.1} /></div>
+        <div className="snap-center"><StatCard isLoading={loading} icon={UserSquare2} label="Total Users" value={stats?.total_users ?? 0} trend="up" trendValue="+8%" iconColor="text-acc-pink" iconBg="bg-acc-pink-soft" delay={0.2} /></div>
+        <div className="snap-center"><StatCard isLoading={loading} icon={Calendar} label="Active Events" value={stats?.total_events ?? 0} trend="up" trendValue="+15%" iconColor="text-acc-orange" iconBg="bg-acc-orange-soft" delay={0.3} /></div>
+        <div className="snap-center"><StatCard isLoading={loading} icon={DollarSign} label="Total Bookings" value={stats?.total_bookings ?? 0} trend="none" trendValue="All Time" iconColor="text-primary" iconBg="bg-primary-soft" delay={0.4} /></div>
+        <div className="snap-center"><StatCard isLoading={loading} icon={Clock} label="Pending Approvals" value={stats?.pending_vendors ?? 0} trend="none" trendValue="Action Needed" iconColor="text-rose-500" iconBg="bg-rose-500/10" delay={0.5} /></div>
       </div>
 
       {/* Refined Quick Actions */}
@@ -142,7 +170,7 @@ export const DashboardHome: React.FC = () => {
               <Badge variant="success" className="px-4 py-1.5 rounded-full">Chennai Live</Badge>
             </div>
           </div>
-          <div className="h-[300px] w-full">
+          <div style={{ width: "100%", height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data}>
                 <defs>

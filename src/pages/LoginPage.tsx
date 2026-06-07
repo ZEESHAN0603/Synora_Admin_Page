@@ -46,7 +46,7 @@ export const LoginPage: React.FC = () => {
             >
               <Zap size={32} fill="white" className="text-white" />
             </motion.div>
-            <h1 className="text-4xl font-black tracking-tighter text-text-heading mb-2">Synora<span className="text-primary">TN</span></h1>
+            <h1 className="text-4xl font-black tracking-tighter text-text-heading mb-2">EventLink<span className="text-primary">TN</span></h1>
             <p className="text-text-subtitle font-bold uppercase tracking-[0.3em] text-[10px]">Admin Intelligence Console</p>
           </div>
 
@@ -71,7 +71,7 @@ export const LoginPage: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="input-field pl-14"
-                  placeholder="admin@synora.com"
+                  placeholder="admin@eventlink.com"
                   required
                 />
               </div>
