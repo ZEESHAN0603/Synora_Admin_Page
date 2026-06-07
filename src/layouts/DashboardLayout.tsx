@@ -41,14 +41,14 @@ export const DashboardLayout: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-bg-main text-text-subtitle transition-colors">
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        setIsOpen={setIsSidebarOpen} 
-        isMobile={isMobile} 
-      />
+      {!isMobile && (
+        <Sidebar 
+          isOpen={isSidebarOpen} 
+          setIsOpen={setIsSidebarOpen} 
+        />
+      )}
       <div className="flex-1 flex flex-col min-w-0 transition-opacity duration-500">
         <Topbar 
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
           isMobile={isMobile} 
         />
         <main className={cn(

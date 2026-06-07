@@ -21,29 +21,45 @@ export const MobileNavbar: React.FC = () => {
 
   return (
     <div className="fixed bottom-6 left-0 right-0 z-50 px-4 md:hidden">
-      <nav className="max-w-md mx-auto h-20 bg-bg-nav/95 backdrop-blur-lg rounded-[2.5rem] flex items-center justify-around px-2 shadow-2xl shadow-black/5 border border-divider">
+      <nav className="max-w-md mx-auto h-20 bg-white/90 dark:bg-zinc-955/90 backdrop-blur-xl rounded-[2.5rem] flex items-center justify-around px-2 shadow-2xl shadow-black/10 border border-divider dark:border-zinc-800/80 relative">
         {tabs.map((tab) => (
           <NavLink
             key={tab.path}
             to={tab.path}
             className={({ isActive }) => cn(
-              "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-500 group",
-              isActive ? "text-primary" : "text-text-secondary"
+              "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-300 group relative z-10",
+              isActive ? "text-primary dark:text-white font-bold" : "text-text-secondary dark:text-zinc-400 hover:text-text-heading dark:hover:text-white"
             )}
           >
-            <div className="relative">
-              <tab.icon size={22} className={cn("transition-transform duration-500", "group-active:scale-90")} />
-              <div className={cn(
-                "absolute -inset-2 bg-primary/20 rounded-full blur-lg opacity-0 transition-opacity duration-500",
-                "group-[.active]:opacity-100"
-              )} />
-            </div>
-            <span className={cn(
-              "text-[9px] font-black uppercase tracking-widest transition-all duration-500",
-              "group-[.active]:scale-110"
-            )}>
-              {tab.label}
-            </span>
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <motion.div
+                    layoutId="mobile-nav-active-bg"
+                    className="absolute inset-x-2 inset-y-2.5 bg-primary/10 dark:bg-primary/20 rounded-2xl -z-10 border border-primary/10"
+                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                  />
+                )}
+                <div className="relative flex items-center justify-center">
+                  <tab.icon 
+                    size={20} 
+                    className={cn(
+                      "transition-all duration-300", 
+                      isActive ? "scale-110 stroke-[2.5] text-primary dark:text-white" : "group-active:scale-95"
+                    )} 
+                  />
+                  {isActive && (
+                    <motion.div 
+                      layoutId="mobile-nav-dot"
+                      className="absolute -bottom-1.5 w-1 h-1 rounded-full bg-primary dark:bg-white" 
+                    />
+                  )}
+                </div>
+                <span className="text-[9px] font-bold uppercase tracking-wider scale-95 origin-center">
+                  {tab.label}
+                </span>
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
